@@ -1,9 +1,8 @@
-
 # Gestor Financeiro
 
 Aplicativo web para controlar o dinheiro pessoal, sem criar conta e sem instalar nada. Feito com HTML, CSS e JavaScript puro, como projeto de estudo e portfólio.
 
-**Demonstração:** _(coloque aqui o link do GitHub Pages depois de publicar)_
+**Demonstração:** [potiflux-cloud.github.io/gestor-financeiro](https://potiflux-cloud.github.io/gestor-financeiro/)
 
 ![Captura de tela do Gestor Financeiro](assets/screenshot.png)
 
@@ -32,9 +31,11 @@ Aplicativo web para controlar o dinheiro pessoal, sem criar conta e sem instalar
 Não precisa instalar nada.
 
 1. Baixe ou clone o repositório:
+
 ```bash
-   git clone https://github.com/SEU-USUARIO/gestor-financeiro.git
+   git clone https://github.com/potiflux-cloud/gestor-financeiro.git
 ```
+
 2. Abra a pasta no VS Code.
 3. Abra o `index.html` no navegador (ou use a extensão Live Server).
 
