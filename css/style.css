@@ -1,0 +1,227 @@
+
+/* ===== Variáveis ===== */
+:root {
+  --tinta: #1b2a41;
+  --tinta-suave: #5b6b82;
+  --papel: #fafcff;
+  --quadro: #dce6f2;
+  --linha: #c9d6e6;
+  --receita: #1f8a5b;
+  --despesa: #d1495b;
+  --meta: #e3a72f;
+  --raio: 10px;
+  --fonte-titulo: "Bricolage Grotesque", system-ui, sans-serif;
+  --fonte-texto: "Figtree", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--fonte-texto);
+  color: var(--tinta);
+  background-color: var(--papel);
+  /* papel quadriculado de caderno */
+  background-image:
+    linear-gradient(var(--quadro) 1px, transparent 1px),
+    linear-gradient(90deg, var(--quadro) 1px, transparent 1px);
+  background-size: 28px 28px;
+  line-height: 1.5;
+}
+
+h1, h2, .valor, .valor-grande { font-family: var(--fonte-titulo); }
+
+/* ===== Topo e rodapé ===== */
+.topo {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem 1rem;
+}
+.topo h1 { font-size: 1.75rem; }
+.topo p { color: var(--tinta-suave); }
+
+.pagina {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.rodape {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--tinta-suave);
+  font-size: 0.875rem;
+}
+
+/* ===== Resumo ===== */
+.resumo {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+}
+.resumo article {
+  background: var(--papel);
+  border: 2px solid var(--tinta);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.rotulo { color: var(--tinta-suave); font-size: 0.9rem; }
+.valor { font-size: 1.5rem; }
+.valor-grande { font-size: 2.75rem; line-height: 1.1; }
+.receitas .valor { color: var(--receita); }
+.despesas .valor { color: var(--despesa); }
+
+/* ===== Blocos ===== */
+.colunas {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.bloco {
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 1.25rem;
+}
+.bloco h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+
+/* ===== Formulários ===== */
+.formulario { display: grid; gap: 0.5rem; }
+.formulario label { font-size: 0.9rem; font-weight: 500; }
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+}
+input:focus-visible,
+select:focus-visible,
+.botao:focus-visible {
+  outline: 3px solid var(--meta);
+  outline-offset: 2px;
+}
+
+.linha { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+/* alternador Despesa / Receita */
+.tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+.tipo input { position: absolute; opacity: 0; }
+.tipo label {
+  text-align: center;
+  padding: 0.55rem;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+}
+.tipo input:checked + label { color: #fff; border-color: transparent; }
+#tipo-despesa:checked + label { background: var(--despesa); }
+#tipo-receita:checked + label { background: var(--receita); }
+.tipo input:focus-visible + label { outline: 3px solid var(--meta); outline-offset: 2px; }
+
+.botao {
+  margin-top: 0.5rem;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--tinta);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.botao:hover { background: #29405f; }
+
+/* ===== Lista de lançamentos ===== */
+.lista, .lista-metas { list-style: none; display: grid; gap: 0.5rem; }
+
+.vazio {
+  color: var(--tinta-suave);
+  padding: 1rem;
+  border: 1px dashed var(--linha);
+  border-radius: 8px;
+}
+
+/* Estes estilos serão usados quando o JavaScript criar os itens (Etapa 3) */
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--linha);
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: #fff;
+}
+.item.receita { border-left-color: var(--receita); }
+.item.despesa { border-left-color: var(--despesa); }
+.item small { display: block; color: var(--tinta-suave); }
+.item .quantia { font-weight: 600; }
+.item.receita .quantia { color: var(--receita); }
+.item.despesa .quantia { color: var(--despesa); }
+.item button {
+  background: none;
+  border: none;
+  color: var(--tinta-suave);
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.item button:hover { color: var(--despesa); }
+
+/* ===== Metas ===== */
+.formulario-meta {
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+.formulario-meta .botao { margin-top: 0; }
+
+.meta { padding: 0.9rem; border: 1px solid var(--linha); border-radius: 8px; background: #fff; }
+.barra { height: 12px; background: var(--quadro); border-radius: 99px; overflow: hidden; margin: 0.5rem 0; }
+.barra > div { height: 100%; width: 0; background: var(--meta); }
+
+/* ===== Celular ===== */
+@media (max-width: 760px) {
+  .resumo { grid-template-columns: 1fr 1fr; }
+  .resumo .saldo { grid-column: 1 / -1; }
+  .colunas { grid-template-columns: 1fr; }
+  .formulario-meta { grid-template-columns: 1fr; }
+  .valor-grande { font-size: 2.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+
+
+
+/* ===== Detalhes das metas ===== */
+.meta-topo { display: flex; justify-content: space-between; align-items: center; }
+.meta-excluir {
+  background: none;
+  border: none;
+  color: var(--tinta-suave);
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.meta-excluir:hover { color: var(--despesa); }
+.meta small { color: var(--tinta-suave); }
+.meta-deposito { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-top: 0.75rem; }
+.meta-deposito .botao { margin-top: 0; }
+.meta.concluida .barra > div { background: var(--receita); }
+.meta.concluida .meta-deposito { display: none; }
+.barra > div { transition: width 0.3s ease; }
