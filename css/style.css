@@ -1,4 +1,3 @@
-
 /* ===== Variáveis ===== */
 :root {
   --tinta: #1b2a41;
@@ -225,3 +224,105 @@ select:focus-visible,
 .meta.concluida .barra > div { background: var(--receita); }
 .meta.concluida .meta-deposito { display: none; }
 .barra > div { transition: width 0.3s ease; }
+
+/* ===== Login, perfil e conta (versão com Firebase) ===== */
+
+/* Garante que o atributo hidden esconda mesmo com display:grid/flex */
+[hidden] { display: none !important; }
+
+/* Área segura do celular (entalhe / barra de status) */
+.topo { padding-top: max(2rem, env(safe-area-inset-top)); }
+
+.bloco-estreito { width: 100%; max-width: 420px; margin: 0 auto; }
+
+.ajuda { color: var(--tinta-suave); font-size: 0.9rem; margin: -0.5rem 0 1rem; }
+
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+}
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+.link:focus-visible,
+.botao-secundario:focus-visible {
+  outline: 3px solid var(--meta);
+  outline-offset: 2px;
+}
+
+.botao-largura { width: 100%; }
+
+.acoes-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--tinta);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link:hover { color: #29405f; }
+
+.botao-secundario {
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--tinta);
+  background: var(--papel);
+  border: 2px solid var(--tinta);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.botao-secundario:hover { background: var(--quadro); }
+.botao-secundario:disabled { opacity: 0.6; cursor: wait; }
+
+.botao:disabled { opacity: 0.6; cursor: wait; }
+
+/* Mensagens de erro e aviso */
+.msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--linha);
+  background: #fff;
+  font-size: 0.9rem;
+}
+.msg-erro { border-color: var(--despesa); color: var(--despesa); }
+.msg-ok { border-color: var(--receita); color: var(--receita); }
+
+/* Barra com nome do perfil, código e sair */
+.conta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--papel);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+}
+.conta small { display: block; color: var(--tinta-suave); }
+.conta code {
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--tinta);
+}
+
+#importar-locais { justify-self: start; }
+
+@media (max-width: 760px) {
+  .conta { flex-direction: column; align-items: flex-start; }
+}

@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Gestor Financeiro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +13,91 @@
 
   <header class="topo">
     <h1>Gestor Financeiro</h1>
-    <p>Seus dados ficam salvos neste navegador.</p>
+    <p>Os dados ficam na nuvem e aparecem para as duas pessoas do perfil.</p>
   </header>
 
-  <main class="pagina">
+  <!-- CARREGANDO -->
+  <section id="tela-carregando" class="pagina" aria-live="polite">
+    <p id="carregando-texto" class="vazio">Carregando…</p>
+    <button type="button" id="tentar-de-novo" class="botao botao-largura" hidden>Tentar de novo</button>
+  </section>
+
+  <!-- LOGIN / CADASTRO -->
+  <section id="tela-login" class="pagina" aria-labelledby="login-titulo" hidden>
+    <div class="bloco bloco-estreito">
+      <h2 id="login-titulo">Entrar</h2>
+
+      <form id="form-login" class="formulario">
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" autocomplete="email" required>
+
+        <label for="login-senha">Senha</label>
+        <input type="password" id="login-senha" autocomplete="current-password" minlength="6" required>
+
+        <p id="login-msg" class="msg" role="alert" hidden></p>
+
+        <button type="submit" id="login-enviar" class="botao">Entrar</button>
+      </form>
+
+      <div class="acoes-link">
+        <button type="button" id="login-alternar" class="link">Criar conta</button>
+        <button type="button" id="login-esqueci" class="link">Esqueci a senha</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESCOLHER PERFIL -->
+  <section id="tela-perfil" class="pagina" aria-label="Perfil compartilhado" hidden>
+    <div class="colunas">
+
+      <div class="bloco">
+        <h2>Criar um perfil</h2>
+        <p class="ajuda">Você recebe um código para a outra pessoa entrar no mesmo perfil.</p>
+
+        <form id="form-criar-perfil" class="formulario">
+          <label for="perfil-nome-novo">Nome do perfil</label>
+          <input type="text" id="perfil-nome-novo" maxlength="40" placeholder="Ex.: Finanças da casa" required>
+          <button type="submit" class="botao">Criar perfil</button>
+        </form>
+      </div>
+
+      <div class="bloco">
+        <h2>Entrar com um código</h2>
+        <p class="ajuda">Peça o código de 8 caracteres para quem já criou o perfil.</p>
+
+        <form id="form-codigo" class="formulario">
+          <label for="perfil-codigo-entrada">Código</label>
+          <input type="text" id="perfil-codigo-entrada" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="Ex.: K7QX4M2P" required>
+          <button type="submit" class="botao">Entrar no perfil</button>
+        </form>
+      </div>
+
+    </div>
+
+    <p id="perfil-msg" class="msg" role="alert" hidden></p>
+
+    <div class="acoes-link">
+      <button type="button" class="link" data-acao="sair">Sair da conta</button>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <main id="tela-app" class="pagina" hidden>
+
+    <section class="conta" aria-label="Perfil e conta">
+      <div>
+        <strong id="perfil-nome"></strong>
+        <small>
+          Código para convidar: <code id="perfil-codigo"></code>
+          <button type="button" id="copiar-codigo" class="link">Copiar</button>
+        </small>
+      </div>
+      <button type="button" class="botao-secundario" data-acao="sair">Sair</button>
+    </section>
+
+    <button type="button" id="importar-locais" class="botao-secundario" hidden>
+      Importar dados antigos deste aparelho
+    </button>
 
     <!-- RESUMO -->
     <section class="resumo" aria-label="Resumo financeiro">
@@ -50,7 +130,7 @@
           </div>
 
           <label for="descricao">Descrição</label>
-          <input type="text" id="descricao" placeholder="Ex.: almoço no RU" required>
+          <input type="text" id="descricao" maxlength="120" placeholder="Ex.: almoço no RU" required>
 
           <div class="linha">
             <div>
@@ -94,7 +174,7 @@
       <form id="form-meta" class="formulario formulario-meta">
         <div>
           <label for="meta-nome">Objetivo</label>
-          <input type="text" id="meta-nome" placeholder="Ex.: notebook novo" required>
+          <input type="text" id="meta-nome" maxlength="60" placeholder="Ex.: notebook novo" required>
         </div>
         <div>
           <label for="meta-valor">Quanto preciso juntar (R$)</label>
@@ -111,9 +191,9 @@
   </main>
 
   <footer class="rodape">
-    <p>Projeto de estudo em HTML, CSS e JavaScript.</p>
+    <p>Projeto de estudo em HTML, CSS e JavaScript, com Firebase.</p>
   </footer>
 
-  <script src="js/script.js"></script>
+  <script type="module" src="js/script.js"></script>
 </body>
 </html>

@@ -1,13 +1,71 @@
-
-"use strict";
-
 // ============================================
 // GESTOR FINANCEIRO
-// HTML + CSS + JAVASCRIPT
+// Interface, login e perfil compartilhado.
+// Os dados ficam no Firestore (ver data.js).
 // ============================================
+
+import {
+  criarConta,
+  entrar,
+  sair,
+  redefinirSenha,
+  observarUsuario,
+  mensagemDeErro
+} from "./auth.js";
+
+import {
+  buscarPerfilDoUsuario,
+  criarPerfil,
+  entrarComCodigo
+} from "./perfil.js";
+
+import {
+  ouvirLancamentos,
+  salvarLancamento,
+  apagarLancamento,
+  ouvirMetas,
+  salvarMeta,
+  depositarNaMeta,
+  apagarMeta,
+  importarDadosLocais
+} from "./data.js";
 
 // ===== ELEMENTOS DA PÁGINA =====
 
+const telas = {
+  carregando: document.getElementById("tela-carregando"),
+  login: document.getElementById("tela-login"),
+  perfil: document.getElementById("tela-perfil"),
+  app: document.getElementById("tela-app")
+};
+
+const elCarregandoTexto = document.getElementById("carregando-texto");
+const botaoTentarDeNovo = document.getElementById("tentar-de-novo");
+
+// Login
+const formLogin = document.getElementById("form-login");
+const inputLoginEmail = document.getElementById("login-email");
+const inputLoginSenha = document.getElementById("login-senha");
+const elLoginTitulo = document.getElementById("login-titulo");
+const elLoginMsg = document.getElementById("login-msg");
+const botaoLoginEnviar = document.getElementById("login-enviar");
+const botaoLoginAlternar = document.getElementById("login-alternar");
+const botaoLoginEsqueci = document.getElementById("login-esqueci");
+
+// Perfil
+const formCriarPerfil = document.getElementById("form-criar-perfil");
+const inputPerfilNovo = document.getElementById("perfil-nome-novo");
+const formCodigo = document.getElementById("form-codigo");
+const inputCodigoEntrada = document.getElementById("perfil-codigo-entrada");
+const elPerfilMsg = document.getElementById("perfil-msg");
+
+// Barra da conta
+const elPerfilNome = document.getElementById("perfil-nome");
+const elPerfilCodigo = document.getElementById("perfil-codigo");
+const botaoCopiarCodigo = document.getElementById("copiar-codigo");
+const botaoImportar = document.getElementById("importar-locais");
+
+// Lançamentos
 const formLancamento = document.getElementById("form-lancamento");
 const inputDescricao = document.getElementById("descricao");
 const inputValor = document.getElementById("valor");
@@ -19,6 +77,7 @@ const elSaldo = document.getElementById("saldo");
 const elReceitas = document.getElementById("total-receitas");
 const elDespesas = document.getElementById("total-despesas");
 
+// Metas
 const formMeta = document.getElementById("form-meta");
 const inputMetaNome = document.getElementById("meta-nome");
 const inputMetaValor = document.getElementById("meta-valor");
@@ -35,53 +94,16 @@ const nomesCategorias = {
   outros: "Outros"
 };
 
-// ===== ARMAZENAMENTO =====
+// ===== ESTADO =====
 
-// Carrega os dados sem interromper o sistema
-// caso o conteúdo salvo esteja inválido.
+let usuario = null;
+let perfil = null;
+let lancamentos = [];
+let metas = [];
+let desligarOuvintes = [];
+let modoLogin = "entrar"; // "entrar" ou "criar"
 
-function carregarDados(chave) {
-  try {
-    const dados = localStorage.getItem(chave);
-
-    if (!dados) {
-      return [];
-    }
-
-    const resultado = JSON.parse(dados);
-
-    return Array.isArray(resultado) ? resultado : [];
-  } catch (erro) {
-    console.error(`Erro ao carregar ${chave}:`, erro);
-
-    alert(
-      `Não foi possível ler os dados de "${chave}". ` +
-      "Verifique o console do navegador."
-    );
-
-    return [];
-  }
-}
-
-// Salva os dados e informa se a operação funcionou.
-
-function salvarDados(chave, dados) {
-  try {
-    localStorage.setItem(chave, JSON.stringify(dados));
-    return true;
-  } catch (erro) {
-    console.error(`Erro ao salvar ${chave}:`, erro);
-
-    alert(
-      "Não foi possível salvar os dados. " +
-      "Verifique o espaço disponível no navegador."
-    );
-
-    return false;
-  }
-}
-
-// ===== DADOS DOS LANÇAMENTOS =====
+// ===== VALIDAÇÃO =====
 
 function lancamentoValido(l) {
   if (!l || typeof l !== "object") {
@@ -100,17 +122,9 @@ function lancamentoValido(l) {
     Number.isFinite(l.valor) &&
     l.valor > 0 &&
     dataValida &&
-    Object.prototype.hasOwnProperty.call(
-      nomesCategorias,
-      l.categoria
-    )
+    Object.prototype.hasOwnProperty.call(nomesCategorias, l.categoria)
   );
 }
-
-let lancamentos = carregarDados("lancamentos")
-  .filter(lancamentoValido);
-
-// ===== DADOS DAS METAS =====
 
 function metaValida(m) {
   return (
@@ -125,9 +139,6 @@ function metaValida(m) {
   );
 }
 
-let metas = carregarDados("metas")
-  .filter(metaValida);
-
 // ===== FUNÇÕES AUXILIARES =====
 
 function formatarMoeda(valor) {
@@ -137,44 +148,195 @@ function formatarMoeda(valor) {
   });
 }
 
-// Converte AAAA-MM-DD em DD/MM/AAAA
-// sem problemas de fuso horário.
-
+// Converte AAAA-MM-DD em DD/MM/AAAA sem problemas de fuso horário.
 function formatarData(data) {
   return data.split("-").reverse().join("/");
 }
 
 // Retorna a data de hoje no formato do input date.
-
 function hojeISO() {
   const agora = new Date();
 
   const local = new Date(
-    agora.getTime() -
-    agora.getTimezoneOffset() * 60000
+    agora.getTime() - agora.getTimezoneOffset() * 60000
   );
 
   return local.toISOString().slice(0, 10);
 }
 
-// Gera identificadores diferentes para cada registro.
+function arredondar(valor) {
+  return Math.round(valor * 100) / 100;
+}
 
-function gerarId() {
-  return (
-    Date.now().toString(36) +
-    Math.random().toString(36).slice(2)
+function mostrarTela(nome) {
+  Object.entries(telas).forEach(([chave, elemento]) => {
+    elemento.hidden = chave !== nome;
+  });
+}
+
+function mostrarMensagem(elemento, texto, tipo = "erro") {
+  elemento.textContent = texto;
+  elemento.className = `msg msg-${tipo}`;
+  elemento.hidden = false;
+}
+
+function esconderMensagem(elemento) {
+  elemento.hidden = true;
+  elemento.textContent = "";
+}
+
+function erroAoSalvar(erro) {
+  console.error("Erro ao salvar:", erro);
+
+  alert(
+    "Não foi possível salvar. " +
+    "Verifique a conexão e tente de novo."
   );
 }
 
-// ===== SALVAR LANÇAMENTOS E METAS =====
+// ============================================
+// LOGIN E CADASTRO
+// ============================================
 
-function salvarLancamentos() {
-  return salvarDados("lancamentos", lancamentos);
+function definirModoLogin(modo) {
+  modoLogin = modo;
+
+  const criando = modo === "criar";
+
+  elLoginTitulo.textContent = criando ? "Criar conta" : "Entrar";
+  botaoLoginEnviar.textContent = criando ? "Criar conta" : "Entrar";
+  botaoLoginAlternar.textContent = criando
+    ? "Já tenho conta"
+    : "Criar conta";
+
+  inputLoginSenha.autocomplete = criando
+    ? "new-password"
+    : "current-password";
+
+  esconderMensagem(elLoginMsg);
 }
 
-function salvarMetas() {
-  return salvarDados("metas", metas);
-}
+botaoLoginAlternar.addEventListener("click", () => {
+  definirModoLogin(modoLogin === "entrar" ? "criar" : "entrar");
+});
+
+botaoLoginEsqueci.addEventListener("click", async () => {
+  const email = inputLoginEmail.value.trim();
+
+  if (!email) {
+    mostrarMensagem(elLoginMsg, "Digite seu e-mail para receber o link.");
+    inputLoginEmail.focus();
+    return;
+  }
+
+  try {
+    await redefinirSenha(email);
+
+    mostrarMensagem(
+      elLoginMsg,
+      "Se esse e-mail tiver conta, enviamos um link para criar uma nova senha.",
+      "ok"
+    );
+  } catch (erro) {
+    mostrarMensagem(elLoginMsg, mensagemDeErro(erro));
+  }
+});
+
+formLogin.addEventListener("submit", async evento => {
+  evento.preventDefault();
+
+  esconderMensagem(elLoginMsg);
+  botaoLoginEnviar.disabled = true;
+
+  const email = inputLoginEmail.value.trim();
+  const senha = inputLoginSenha.value;
+
+  try {
+    if (modoLogin === "criar") {
+      await criarConta(email, senha);
+    } else {
+      await entrar(email, senha);
+    }
+    // O restante acontece em observarUsuario().
+  } catch (erro) {
+    mostrarMensagem(elLoginMsg, mensagemDeErro(erro));
+  } finally {
+    botaoLoginEnviar.disabled = false;
+  }
+});
+
+document.querySelectorAll('[data-acao="sair"]').forEach(botao => {
+  botao.addEventListener("click", () => {
+    sair().catch(erroAoSalvar);
+  });
+});
+
+// ============================================
+// PERFIL COMPARTILHADO
+// ============================================
+
+formCriarPerfil.addEventListener("submit", async evento => {
+  evento.preventDefault();
+
+  esconderMensagem(elPerfilMsg);
+
+  const nome = inputPerfilNovo.value.trim();
+
+  if (!nome) {
+    mostrarMensagem(elPerfilMsg, "Dê um nome ao perfil.");
+    return;
+  }
+
+  const botao = formCriarPerfil.querySelector("button[type=submit]");
+  botao.disabled = true;
+
+  try {
+    perfil = await criarPerfil(usuario.uid, nome);
+    iniciarApp();
+  } catch (erro) {
+    console.error(erro);
+    mostrarMensagem(elPerfilMsg, erro.message || mensagemDeErro(erro));
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+formCodigo.addEventListener("submit", async evento => {
+  evento.preventDefault();
+
+  esconderMensagem(elPerfilMsg);
+
+  const botao = formCodigo.querySelector("button[type=submit]");
+  botao.disabled = true;
+
+  try {
+    perfil = await entrarComCodigo(usuario.uid, inputCodigoEntrada.value);
+
+    if (!perfil) {
+      throw new Error("Não foi possível entrar nesse perfil.");
+    }
+
+    iniciarApp();
+  } catch (erro) {
+    console.error(erro);
+    mostrarMensagem(elPerfilMsg, erro.message || mensagemDeErro(erro));
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+botaoCopiarCodigo.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(perfil.codigo);
+    botaoCopiarCodigo.textContent = "Copiado";
+  } catch (erro) {
+    botaoCopiarCodigo.textContent = "Copie manualmente";
+  }
+
+  setTimeout(() => {
+    botaoCopiarCodigo.textContent = "Copiar";
+  }, 2000);
+});
 
 // ============================================
 // RESUMO FINANCEIRO
@@ -189,11 +351,9 @@ function atualizarResumo() {
     .filter(l => l.tipo === "despesa")
     .reduce((soma, l) => soma + l.valor, 0);
 
-  const saldo = receitas - despesas;
-
   elReceitas.textContent = formatarMoeda(receitas);
   elDespesas.textContent = formatarMoeda(despesas);
-  elSaldo.textContent = formatarMoeda(saldo);
+  elSaldo.textContent = formatarMoeda(receitas - despesas);
 }
 
 // ============================================
@@ -216,8 +376,7 @@ function renderizar() {
     return;
   }
 
-  // Ordena por data, mostrando as mais recentes primeiro.
-
+  // Mais recentes primeiro.
   const ordenados = [...lancamentos].sort((a, b) => {
     const comparacao = b.data.localeCompare(a.data);
 
@@ -233,8 +392,6 @@ function renderizar() {
 
     li.className = `item ${l.tipo}`;
 
-    // Descrição e detalhes.
-
     const info = document.createElement("div");
 
     const titulo = document.createElement("strong");
@@ -246,25 +403,17 @@ function renderizar() {
 
     info.append(titulo, detalhe);
 
-    // Valor da receita ou despesa.
-
     const quantia = document.createElement("span");
 
     quantia.className = "quantia";
-
     quantia.textContent =
       `${l.tipo === "despesa" ? "- " : "+ "}${formatarMoeda(l.valor)}`;
-
-    // Botão de exclusão.
 
     const botao = document.createElement("button");
 
     botao.type = "button";
     botao.textContent = "✕";
-    botao.setAttribute(
-      "aria-label",
-      `Excluir ${l.descricao}`
-    );
+    botao.setAttribute("aria-label", `Excluir ${l.descricao}`);
 
     botao.addEventListener("click", () => {
       excluirLancamento(l.id);
@@ -277,8 +426,6 @@ function renderizar() {
 
   atualizarResumo();
 }
-
-// ===== ADICIONAR LANÇAMENTO =====
 
 function adicionarLancamento(evento) {
   evento.preventDefault();
@@ -319,34 +466,21 @@ function adicionarLancamento(evento) {
     return;
   }
 
-  if (
-    !Object.prototype.hasOwnProperty.call(
-      nomesCategorias,
-      categoria
-    )
-  ) {
+  if (!Object.prototype.hasOwnProperty.call(nomesCategorias, categoria)) {
     alert("Selecione uma categoria válida.");
     inputCategoria.focus();
     return;
   }
 
-  const novo = {
-    id: gerarId(),
+  // Não esperamos a resposta do servidor: o item aparece na hora
+  // (cache local) e sincroniza em seguida, mesmo sem internet.
+  salvarLancamento(perfil.id, {
     tipo: tipoSelecionado.value,
     descricao,
     valor,
     data,
     categoria
-  };
-
-  lancamentos.push(novo);
-
-  if (!salvarLancamentos()) {
-    lancamentos.pop();
-    return;
-  }
-
-  renderizar();
+  }).catch(erroAoSalvar);
 
   formLancamento.reset();
 
@@ -354,19 +488,8 @@ function adicionarLancamento(evento) {
   inputDescricao.focus();
 }
 
-// ===== EXCLUIR LANÇAMENTO =====
-
 function excluirLancamento(id) {
-  const anteriores = lancamentos;
-
-  lancamentos = lancamentos.filter(l => l.id !== id);
-
-  if (!salvarLancamentos()) {
-    lancamentos = anteriores;
-    return;
-  }
-
-  renderizar();
+  apagarLancamento(perfil.id, id).catch(erroAoSalvar);
 }
 
 // ============================================
@@ -388,24 +511,13 @@ function renderizarMetas() {
   }
 
   metas.forEach(m => {
-    const percentual = Math.min(
-      100,
-      (m.guardado / m.alvo) * 100
-    );
-
-    const falta = Math.max(
-      0,
-      m.alvo - m.guardado
-    );
-
+    const percentual = Math.min(100, (m.guardado / m.alvo) * 100);
+    const falta = Math.max(0, m.alvo - m.guardado);
     const concluida = m.guardado >= m.alvo;
 
     const li = document.createElement("li");
 
-    li.className =
-      "meta" + (concluida ? " concluida" : "");
-
-    // Título e botão para excluir a meta.
+    li.className = "meta" + (concluida ? " concluida" : "");
 
     const topo = document.createElement("div");
     topo.className = "meta-topo";
@@ -418,11 +530,7 @@ function renderizarMetas() {
     excluir.type = "button";
     excluir.className = "meta-excluir";
     excluir.textContent = "✕";
-
-    excluir.setAttribute(
-      "aria-label",
-      `Excluir meta ${m.nome}`
-    );
+    excluir.setAttribute("aria-label", `Excluir meta ${m.nome}`);
 
     excluir.addEventListener("click", () => {
       excluirMeta(m.id);
@@ -430,24 +538,19 @@ function renderizarMetas() {
 
     topo.append(titulo, excluir);
 
-    // Barra de progresso.
-
     const barra = document.createElement("div");
     barra.className = "barra";
 
     const preenchimento = document.createElement("div");
-
     preenchimento.style.width = `${percentual}%`;
 
     barra.appendChild(preenchimento);
-
-    // Texto do progresso.
 
     const texto = document.createElement("small");
 
     if (concluida) {
       texto.textContent =
-        `Meta concluída! ${formatarMoeda(m.guardado)} guardados.`;
+        `Meta concluída! ${formatarMoeda(m.alvo)} guardados.`;
     } else {
       texto.textContent =
         `${formatarMoeda(m.guardado)} de ${formatarMoeda(m.alvo)} ` +
@@ -455,9 +558,6 @@ function renderizarMetas() {
     }
 
     li.append(topo, barra, texto);
-
-    // Formulário de depósito.
-    // Metas concluídas não recebem novos depósitos.
 
     if (!concluida) {
       const deposito = document.createElement("form");
@@ -471,11 +571,7 @@ function renderizarMetas() {
       campo.step = "0.01";
       campo.placeholder = "Valor a guardar";
       campo.required = true;
-
-      campo.setAttribute(
-        "aria-label",
-        `Valor a guardar em ${m.nome}`
-      );
+      campo.setAttribute("aria-label", `Valor a guardar em ${m.nome}`);
 
       const botao = document.createElement("button");
 
@@ -487,11 +583,7 @@ function renderizarMetas() {
 
       deposito.addEventListener("submit", evento => {
         evento.preventDefault();
-
-        guardarNaMeta(
-          m.id,
-          Number(campo.value)
-        );
+        guardarNaMeta(m.id, Number(campo.value));
       });
 
       li.appendChild(deposito);
@@ -500,8 +592,6 @@ function renderizarMetas() {
     listaMetas.appendChild(li);
   });
 }
-
-// ===== CRIAR META =====
 
 function criarMeta(evento) {
   evento.preventDefault();
@@ -521,27 +611,11 @@ function criarMeta(evento) {
     return;
   }
 
-  const novaMeta = {
-    id: gerarId(),
-    nome,
-    alvo,
-    guardado: 0
-  };
-
-  metas.push(novaMeta);
-
-  if (!salvarMetas()) {
-    metas.pop();
-    return;
-  }
-
-  renderizarMetas();
+  salvarMeta(perfil.id, { nome, alvo, guardado: 0 }).catch(erroAoSalvar);
 
   formMeta.reset();
   inputMetaNome.focus();
 }
-
-// ===== GUARDAR DINHEIRO NA META =====
 
 function guardarNaMeta(id, valor) {
   if (!Number.isFinite(valor) || valor <= 0) {
@@ -555,57 +629,180 @@ function guardarNaMeta(id, valor) {
     return;
   }
 
-  const guardadoAnterior = meta.guardado;
-
-  // Impede que o valor guardado ultrapasse o objetivo.
-
-  meta.guardado = Math.min(
-    meta.alvo,
-    meta.guardado + valor
+  // Não deixa o valor guardado passar do objetivo.
+  const deposito = arredondar(
+    Math.min(valor, meta.alvo - meta.guardado)
   );
 
-  if (!salvarMetas()) {
-    meta.guardado = guardadoAnterior;
-    return;
-  }
-
-  renderizarMetas();
+  depositarNaMeta(perfil.id, id, deposito).catch(erroAoSalvar);
 }
-
-// ===== EXCLUIR META =====
 
 function excluirMeta(id) {
-  const anteriores = metas;
-
-  metas = metas.filter(m => m.id !== id);
-
-  if (!salvarMetas()) {
-    metas = anteriores;
-    return;
-  }
-
-  renderizarMetas();
+  apagarMeta(perfil.id, id).catch(erroAoSalvar);
 }
 
 // ============================================
-// INICIALIZAÇÃO DO SISTEMA
+// IMPORTAR DADOS ANTIGOS (localStorage)
 // ============================================
 
-// Registra cada evento uma única vez.
+function lerDadosLocais() {
+  try {
+    const l = JSON.parse(localStorage.getItem("lancamentos") || "[]");
+    const m = JSON.parse(localStorage.getItem("metas") || "[]");
 
-formLancamento.addEventListener(
-  "submit",
-  adicionarLancamento
-);
+    return {
+      lancamentos: Array.isArray(l) ? l.filter(lancamentoValido) : [],
+      metas: Array.isArray(m) ? m.filter(metaValida) : []
+    };
+  } catch (erro) {
+    return { lancamentos: [], metas: [] };
+  }
+}
 
-formMeta.addEventListener(
-  "submit",
-  criarMeta
-);
+function verificarDadosLocais() {
+  const locais = lerDadosLocais();
 
-// Define a data inicial e renderiza a interface.
+  botaoImportar.hidden =
+    locais.lancamentos.length === 0 && locais.metas.length === 0;
+}
 
-inputData.value = hojeISO();
+botaoImportar.addEventListener("click", async () => {
+  const locais = lerDadosLocais();
 
-renderizar();
-renderizarMetas();
+  const ok = confirm(
+    `Importar ${locais.lancamentos.length} lançamento(s) e ` +
+    `${locais.metas.length} meta(s) para o perfil "${perfil.nome}"?\n\n` +
+    "Faça isso em apenas um aparelho para não duplicar os dados."
+  );
+
+  if (!ok) {
+    return;
+  }
+
+  botaoImportar.disabled = true;
+
+  try {
+    await importarDadosLocais(perfil.id, locais.lancamentos, locais.metas);
+
+    localStorage.removeItem("lancamentos");
+    localStorage.removeItem("metas");
+
+    botaoImportar.hidden = true;
+  } catch (erro) {
+    erroAoSalvar(erro);
+  } finally {
+    botaoImportar.disabled = false;
+  }
+});
+
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+
+function pararOuvintes() {
+  desligarOuvintes.forEach(parar => parar());
+  desligarOuvintes = [];
+}
+
+function erroDeLeitura(erro) {
+  console.error("Erro ao ler os dados:", erro);
+
+  alert(
+    "Não foi possível carregar os dados do perfil. " +
+    "Verifique a conexão e tente de novo."
+  );
+}
+
+function iniciarApp() {
+  pararOuvintes();
+
+  elPerfilNome.textContent = perfil.nome;
+  elPerfilCodigo.textContent = perfil.codigo;
+
+  inputData.value = hojeISO();
+
+  lancamentos = [];
+  metas = [];
+
+  renderizar();
+  renderizarMetas();
+
+  mostrarTela("app");
+  verificarDadosLocais();
+
+  desligarOuvintes = [
+    ouvirLancamentos(
+      perfil.id,
+      lista => {
+        lancamentos = lista.filter(lancamentoValido);
+        renderizar();
+      },
+      erroDeLeitura
+    ),
+    ouvirMetas(
+      perfil.id,
+      lista => {
+        metas = lista
+          .filter(metaValida)
+          .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+        renderizarMetas();
+      },
+      erroDeLeitura
+    )
+  ];
+}
+
+async function carregarUsuario() {
+  mostrarTela("carregando");
+
+  elCarregandoTexto.textContent = "Carregando…";
+  botaoTentarDeNovo.hidden = true;
+
+  try {
+    perfil = await buscarPerfilDoUsuario(usuario.uid);
+  } catch (erro) {
+    console.error(erro);
+
+    elCarregandoTexto.textContent =
+      "Não foi possível carregar seu perfil. Verifique a internet.";
+    botaoTentarDeNovo.hidden = false;
+
+    return;
+  }
+
+  if (!perfil) {
+    esconderMensagem(elPerfilMsg);
+    mostrarTela("perfil");
+    return;
+  }
+
+  iniciarApp();
+}
+
+botaoTentarDeNovo.addEventListener("click", () => {
+  if (usuario) {
+    carregarUsuario();
+  }
+});
+
+formLancamento.addEventListener("submit", adicionarLancamento);
+formMeta.addEventListener("submit", criarMeta);
+
+// Dispara ao abrir o app e sempre que alguém entra ou sai.
+observarUsuario(novoUsuario => {
+  pararOuvintes();
+
+  usuario = novoUsuario;
+  perfil = null;
+  lancamentos = [];
+  metas = [];
+
+  if (!usuario) {
+    formLogin.reset();
+    definirModoLogin("entrar");
+    mostrarTela("login");
+    return;
+  }
+
+  carregarUsuario();
+});
