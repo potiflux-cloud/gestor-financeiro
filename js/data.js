@@ -14,7 +14,7 @@ import {
   increment,
   serverTimestamp,
   writeBatch
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+} from "firebase/firestore";
 
 import { db, auth } from "./firebase.js";
 

@@ -6,7 +6,7 @@ import {
   signOut,
   sendPasswordResetEmail,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+} from "firebase/auth";
 
 import { auth } from "./firebase.js";
 
@@ -23,12 +23,7 @@ const mensagens = {
 };
 
 export function mensagemDeErro(erro) {
-  console.error(erro);
-
-  return (
-    mensagens[erro && erro.code] ||
-    `Algo deu errado (${(erro && (erro.code || erro.message)) || "erro desconhecido"}).`
-  );
+  return mensagens[erro && erro.code] || "Algo deu errado. Tente de novo.";
 }
 
 export function criarConta(email, senha) {

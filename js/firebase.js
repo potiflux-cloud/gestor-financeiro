@@ -1,15 +1,14 @@
 // Inicialização do Firebase.
-// Por enquanto o SDK vem do CDN do Google, então o app roda direto no
-// Live Server e no GitHub Pages. Na etapa do APK, trocamos para o pacote
-// npm "firebase" (assim o app funciona offline dentro do celular).
+// O SDK vem do pacote npm "firebase" e é empacotado pelo Vite,
+// por isso o app funciona offline dentro do celular (Capacitor).
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+} from "firebase/firestore";
 
 import { firebaseConfig } from "./firebase-config.js";
 

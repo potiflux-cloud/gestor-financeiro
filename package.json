@@ -1,0 +1,29 @@
+{
+  "name": "gestor-financeiro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicativo para controlar o dinheiro em dupla: duas pessoas entram no mesmo perfil e veem os mesmos lançamentos e metas, em tempo real, cada uma no seu aparelho. Feito com HTML, CSS e JavaScript puro, com Firebase (login e banco de dados na nuvem), como projeto de estudo e portfólio.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/potiflux-cloud/gestor-financeiro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/potiflux-cloud/gestor-financeiro/issues"
+  },
+  "homepage": "https://github.com/potiflux-cloud/gestor-financeiro#readme",
+  "dependencies": {
+    "firebase": "^13.1.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}
